@@ -18,12 +18,6 @@ AJAX_ENDPOINT = "/api/ajax"
 GRAPHQL_ENDPOINT = "https://lms.servicelayer.test.platform-test.plugz.dev/graphql"
 # 50five Plugz application ID embedded in the mobile-app JWT payload
 PLUGZ_APPLICATION_ID = "dd6ee167-17d0-4bea-877d-9156bd5917dd"
-# Firebase client key embedded in the 50five iOS app (kept for reference)
-FIREBASE_API_KEY = "AIzaSyDWTajlYrih7AqtJzxrpmVLDSENCk0jse8"
-FIREBASE_SIGN_IN_URL = (
-    "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
-)
-FIREBASE_TOKEN_LIFETIME = 3540
 
 # Key names
 KEY_ID = "id"
