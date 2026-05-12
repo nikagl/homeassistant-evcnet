@@ -60,7 +60,7 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
 
     def get_device_info(self, spot_id: str) -> dict[str, Any]:
         """Generate generic device info for a charge spot."""
-        spot_data: EvcSpotData | None = self.data.get(spot_id)
+        spot_data: EvcSpotData | None = self.data.get(spot_id) if self.data else None
         sw_version = spot_data.info.get("SOFTWARE_VERSION") if spot_data else None
         return {
             "identifiers": {(DOMAIN, spot_id)},
@@ -239,7 +239,7 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
                 spot_id,
                 err,
             )
-            if spot_id in self.data:
+            if self.data and spot_id in self.data:
                 return self.data[spot_id]
             return EvcSpotData(
                 info=spot,
@@ -257,7 +257,7 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
                 spot_id,
                 err,
             )
-            if spot_id in self.data:
+            if self.data and spot_id in self.data:
                 return self.data[spot_id]
             return EvcSpotData(
                 info=spot,
@@ -286,7 +286,13 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
                 list[list[dict[str, Any]]],
                 await self.client.get_customer_id(spot_id),
             )
-            if isinstance(customer_data, list) and len(customer_data) > 0:
+            if (
+                isinstance(customer_data, list)
+                and len(customer_data) > 0
+                and isinstance(customer_data[0], list)
+                and len(customer_data[0]) > 0
+                and isinstance(customer_data[0][0], dict)
+            ):
                 customer_idx = customer_data[0][0].get(KEY_ID)
                 customer_text = customer_data[0][0].get(KEY_TEXT)
                 status[KEY_CUSTOMERS_IDX] = customer_idx
@@ -526,7 +532,7 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
 
     async def async_poll_spot(self, spot_id: str) -> None:
         """Update only the data for a specific charging spot."""
-        if spot_id not in self.data:
+        if not self.data or spot_id not in self.data:
             _LOGGER.error("Spot %s not found in current data", spot_id)
             return
 

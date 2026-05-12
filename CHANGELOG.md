@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-05-12
+
+### Fixed
+- Guard coordinator fallback paths when `self.data` is not initialized yet to prevent `NoneType` membership errors during setup.
+- Harden customer lookup parsing when API returns empty nested lists to prevent `list index out of range` warnings.
+- Make spot polling and device info retrieval safe when coordinator data is temporarily unavailable.
+
 ## [1.0.1] - 2026-02-19
 
 ### Fixed
