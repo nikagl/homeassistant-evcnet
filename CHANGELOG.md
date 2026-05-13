@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2-beta.4] - 2026-05-13
+
+### Added
+- New diagnostic sensor: `Reimbursement Tariff Source` to show which tariff source is active (`graphql_hcc`, `web_reimbursement_tariff`, `web_tariff`, or `unavailable`).
+
 ## [1.2.2-beta.3] - 2026-05-13
 
 ### Fixed

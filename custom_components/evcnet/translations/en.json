@@ -92,6 +92,9 @@
         "reimbursement_tariff_excl_vat": {
           "name": "Reimbursement Tariff (excl. VAT)"
         },
+        "reimbursement_tariff_source": {
+          "name": "Reimbursement Tariff Source"
+        },
         "reimbursement_tariff_incl_vat": {
           "name": "Reimbursement Tariff (incl. VAT)"
         },

@@ -157,6 +157,12 @@ SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
             },
         ),
         EvcNetSensorEntityDescription(
+            key="reimbursement_tariff_source",
+            translation_key="reimbursement_tariff_source",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            value_fn=lambda data: data.tariff_source or "unavailable",
+        ),
+        EvcNetSensorEntityDescription(
             key="reimbursement_tariff_incl_vat",
             translation_key="reimbursement_tariff_incl_vat",
             native_unit_of_measurement=f"{CURRENCY_EURO}/kWh",
