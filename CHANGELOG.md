@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2-beta.6] - 2026-05-13
+
+### Fixed
+- Fixed tariff_source incorrectly showing "graphql_hcc" when HCC is disabled but previous cached value persists. Now explicitly resets hcc_tariff to None when GraphQL HCC is unavailable, forcing correct fallback to web sources.
+
 ## [1.2.2-beta.5] - 2026-05-13
 
 ### Changed

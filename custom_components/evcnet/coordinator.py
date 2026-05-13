@@ -431,6 +431,7 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
                     hcc_tariff,
                 )
             else:
+                hcc_tariff = None
                 _LOGGER.debug(
                     "GraphQL HCC tariff unavailable for spot %s: %s",
                     spot_id,
