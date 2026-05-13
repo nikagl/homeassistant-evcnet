@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2-beta.1] - 2026-05-13
+
+### Fixed
+- Added tariff fallback from dashboard data (`TARIFF`, for example `0,36 EUR`) when GraphQL HCC tariff is unavailable or disabled.
+- Improved locale number parsing to handle currency-suffixed tariff strings.
+- Hardened GraphQL response parsing for `data: null` responses to avoid `NoneType` errors in VAT/transaction fallback logic.
+
 ## [1.2.1] - 2026-05-12
 
 ### Fixed

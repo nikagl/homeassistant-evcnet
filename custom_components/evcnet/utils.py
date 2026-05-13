@@ -1,12 +1,13 @@
 """Utils for EVC-net."""
 
 import logging
+import re
 from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def parse_locale_number(value: Any, default: float = 0.0) -> float:
+def parse_locale_number(value: Any, default: float | None = 0.0) -> float | None:
     """Parseert getallen en gaat slim om met Europese/Engelse notaties."""
     if value is None or value == "":
         return default
@@ -14,8 +15,10 @@ def parse_locale_number(value: Any, default: float = 0.0) -> float:
     if isinstance(value, (int, float)):
         return float(value)
 
-    # Delete currency signs or extra spaces
+    # Delete currency markers and keep only numeric-relevant characters.
     clean_value = str(value).strip().replace("€", "").replace("%", "")
+    clean_value = re.sub(r"\bEUR\b", "", clean_value, flags=re.IGNORECASE)
+    clean_value = re.sub(r"[^0-9,.-]", "", clean_value)
 
     try:
         # Is it a standard float-string? (1.234)

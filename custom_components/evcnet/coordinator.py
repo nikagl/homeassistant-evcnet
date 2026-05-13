@@ -21,7 +21,7 @@ from .const import (
     LOG_ROW_LIMIT,
     EvcNetException,
 )
-from .utils import get_total_energy_usage_kwh
+from .utils import get_total_energy_usage_kwh, parse_locale_number
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -206,6 +206,16 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
             hcc_tariff, vat_rate, active_transaction = (
                 await self._async_get_graphql_data(spot_id)
             )
+            if hcc_tariff is None:
+                # Fallback: web dashboard overview contains a rounded tariff string.
+                # Example: "0,36 EUR"
+                hcc_tariff = parse_locale_number(spot.get("TARIFF"), default=None)
+                if hcc_tariff is not None:
+                    _LOGGER.debug(
+                        "Using dashboard tariff fallback for spot %s: %s",
+                        spot_id,
+                        hcc_tariff,
+                    )
 
             if selected_channel_id:
                 logging_data = await self._async_get_logging(
@@ -369,10 +379,16 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
 
         try:
             tariff_response = await self.client.get_hcc_tariff(spot_id)
+            tariff_data = tariff_response.get("data")
+            station_data = (
+                tariff_data.get("getChargeStationById", {})
+                if isinstance(tariff_data, dict)
+                else {}
+            )
             hcc_data = (
-                tariff_response.get("data", {})
-                .get("getChargeStationById", {})
-                .get("homeChargingCompensation", {})
+                station_data.get("homeChargingCompensation", {})
+                if isinstance(station_data, dict)
+                else {}
             )
             if hcc_data and hcc_data.get("hccEnabled"):
                 hcc_tariff = hcc_data.get("hccTariff")
@@ -399,7 +415,12 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
 
         try:
             tx_response = await self.client.get_active_transaction()
-            tx_data = tx_response.get("data", {}).get("lmsActiveTransaction")
+            tx_data_wrapper = tx_response.get("data")
+            tx_data = (
+                tx_data_wrapper.get("lmsActiveTransaction")
+                if isinstance(tx_data_wrapper, dict)
+                else None
+            )
             active_transaction = tx_data
             if tx_data:
                 raw_vat = tx_data.get("vat")
@@ -434,10 +455,16 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
             # active transaction payload has no VAT (or no active transaction).
             if vat_rate is None:
                 tx_history_response = await self.client.get_recent_transactions(spot_id)
+                tx_history_data = tx_history_response.get("data")
+                transactions_data = (
+                    tx_history_data.get("getTransactions", {})
+                    if isinstance(tx_history_data, dict)
+                    else {}
+                )
                 tx_items = (
-                    tx_history_response.get("data", {})
-                    .get("getTransactions", {})
-                    .get("items", [])
+                    transactions_data.get("items", [])
+                    if isinstance(transactions_data, dict)
+                    else []
                 )
                 fallback_vats: list[float] = []
                 for item in tx_items:
