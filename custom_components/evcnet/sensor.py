@@ -64,6 +64,28 @@ def _session_total_amount(data: EvcSpotData) -> float | None:
     return parse_locale_number(data.active_transaction.get("totalAmount"), default=None)
 
 
+def _session_cost_excl_vat(data: EvcSpotData) -> float | None:
+    """Get session cost excluding VAT.
+
+    Prefer GraphQL totalAmount/VAT when available to avoid discrepancies caused
+    by differing energy units between APIs.
+    """
+    total_amount = _session_total_amount(data)
+    if (
+        total_amount is not None
+        and data.vat_rate is not None
+        and data.vat_rate >= 0
+        and (1 + data.vat_rate) != 0
+    ):
+        return total_amount / (1 + data.vat_rate)
+
+    session_energy = _session_energy_kwh(data)
+    if session_energy is not None and data.hcc_tariff is not None:
+        return session_energy * data.hcc_tariff
+
+    return None
+
+
 SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
     EvcNetSensorEntityDescription(
         key="status",
@@ -191,8 +213,8 @@ SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
             value_fn=lambda data: (
-                round(_session_energy_kwh(data) * data.hcc_tariff, 2)
-                if _session_energy_kwh(data) is not None and data.hcc_tariff is not None
+                round(_session_cost_excl_vat(data), 2)
+                if _session_cost_excl_vat(data) is not None
                 else None
             ),
         ),

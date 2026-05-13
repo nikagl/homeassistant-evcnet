@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2-beta.7] - 2026-05-14
+
+### Fixed
+- Fixed `Session Cost (excl. VAT)` spikes for some users by deriving excl. VAT from GraphQL `totalAmount` and `vat` when available, then falling back to `energy * tariff` only when needed.
+
 ## [1.2.2-beta.6] - 2026-05-13
 
 ### Fixed
