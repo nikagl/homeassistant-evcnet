@@ -24,3 +24,8 @@ jobs:
       uses: softprops/action-gh-release@v2.4.1
       with:
         files: ${{ github.workspace }}/custom_components/evcnet/homeassistant-evcnet.zip
+        generate_release_notes: true
+        body: |
+          ## Home Assistant EVC-net release
+
+          See the auto-generated release notes below for the full list of changes.
