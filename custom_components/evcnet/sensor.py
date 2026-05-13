@@ -40,6 +40,30 @@ class EvcNetSensorEntityDescription(SensorEntityDescription):
     attributes_fn: Callable[[EvcSpotData], dict[str, Any]] | None = None
 
 
+def _session_energy_kwh(data: EvcSpotData) -> float | None:
+    """Get session energy in kWh from active transaction or status fallback."""
+    if data.active_transaction is not None:
+        active_energy = parse_locale_number(
+            data.active_transaction.get("energyDelivered"),
+            default=None,
+        )
+        if active_energy is not None:
+            return active_energy
+
+    return parse_locale_number(
+        data.status.get("TRANS_ENERGY_DELIVERED_KWH"),
+        default=None,
+    )
+
+
+def _session_total_amount(data: EvcSpotData) -> float | None:
+    """Get total amount from active transaction when available."""
+    if data.active_transaction is None:
+        return None
+
+    return parse_locale_number(data.active_transaction.get("totalAmount"), default=None)
+
+
 SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
     EvcNetSensorEntityDescription(
         key="status",
@@ -124,6 +148,13 @@ SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
             value_fn=lambda data: data.hcc_tariff,
+            attributes_fn=lambda data: {
+                "tariff_source": data.tariff_source,
+                "web_tariff_raw": data.info.get("TARIFF"),
+                "web_reimbursement_tariff_raw": data.info.get("REIMBURSEMENT_TARIFF"),
+                "web_tariff_parsed": data.web_tariff,
+                "web_reimbursement_tariff_parsed": data.web_reimbursement_tariff,
+            },
         ),
         EvcNetSensorEntityDescription(
             key="reimbursement_tariff_incl_vat",
@@ -154,21 +185,9 @@ SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
             value_fn=lambda data: (
-                round(
-                    data.active_transaction.get("energyDelivered", 0) * data.hcc_tariff,
-                    2,
-                )
-                if data.active_transaction is not None and data.hcc_tariff is not None
-                else (
-                    round(
-                        data.status.get("TRANS_ENERGY_DELIVERED_KWH", 0) * data.hcc_tariff,
-                        2,
-                    )
-                    if data.status is not None
-                    and data.status.get("TRANS_ENERGY_DELIVERED_KWH") is not None
-                    and data.hcc_tariff is not None
-                    else None
-                )
+                round(_session_energy_kwh(data) * data.hcc_tariff, 2)
+                if _session_energy_kwh(data) is not None and data.hcc_tariff is not None
+                else None
             ),
         ),
         EvcNetSensorEntityDescription(
@@ -178,17 +197,14 @@ SENSOR_TYPES: tuple[EvcNetSensorEntityDescription, ...] = (
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
             value_fn=lambda data: (
-                data.active_transaction.get("totalAmount")
-                if data.active_transaction is not None
+                round(_session_total_amount(data), 2)
+                if _session_total_amount(data) is not None
                 else (
                     round(
-                        data.status.get("TRANS_ENERGY_DELIVERED_KWH", 0)
-                        * data.hcc_tariff
-                        * (1 + data.vat_rate),
+                        _session_energy_kwh(data) * data.hcc_tariff * (1 + data.vat_rate),
                         2,
                     )
-                    if data.status is not None
-                    and data.status.get("TRANS_ENERGY_DELIVERED_KWH") is not None
+                    if _session_energy_kwh(data) is not None
                     and data.hcc_tariff is not None
                     and data.vat_rate is not None
                     else None

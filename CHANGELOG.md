@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2-beta.3] - 2026-05-13
+
+### Fixed
+- Improved tariff source selection to support three paths in priority order: GraphQL HCC tariff, web reimbursement tariff, then web rounded tariff.
+- Added tariff source diagnostics attributes so it is visible which source is currently used and what raw/parsed web tariff values are available.
+- Hardened session cost calculations to parse locale-formatted numeric strings from both GraphQL and web status payloads.
+
 ## [1.2.2-beta.2] - 2026-05-13
 
 ### Fixed

@@ -42,6 +42,9 @@ class EvcSpotData:
     hcc_tariff: float | None = None
     vat_rate: float | None = None
     active_transaction: dict[str, Any] | None = None
+    web_tariff: float | None = None
+    web_reimbursement_tariff: float | None = None
+    tariff_source: str | None = None
 
 
 class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
@@ -206,16 +209,42 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
             hcc_tariff, vat_rate, active_transaction = (
                 await self._async_get_graphql_data(spot_id)
             )
+            web_tariff = parse_locale_number(spot.get("TARIFF"), default=None)
+            web_reimbursement_tariff = parse_locale_number(
+                spot.get("REIMBURSEMENT_TARIFF"),
+                default=None,
+            )
+            tariff_source = "graphql_hcc" if hcc_tariff is not None else None
+
             if hcc_tariff is None:
-                # Fallback: web dashboard overview contains a rounded tariff string.
-                # Example: "0,36 EUR"
-                hcc_tariff = parse_locale_number(spot.get("TARIFF"), default=None)
+                # Fallback: web dashboard overview may expose reimbursement tariff
+                # and/or a rounded tariff string (for example "0,36 EUR").
+                hcc_tariff = web_reimbursement_tariff
                 if hcc_tariff is not None:
+                    tariff_source = "web_reimbursement_tariff"
                     _LOGGER.debug(
-                        "Using dashboard tariff fallback for spot %s: %s",
+                        "Using web reimbursement tariff fallback for spot %s: %s",
                         spot_id,
                         hcc_tariff,
                     )
+                else:
+                    hcc_tariff = web_tariff
+                    if hcc_tariff is not None:
+                        tariff_source = "web_tariff"
+                        _LOGGER.debug(
+                            "Using web tariff fallback for spot %s: %s",
+                            spot_id,
+                            hcc_tariff,
+                        )
+
+            _LOGGER.debug(
+                "Tariff sources for spot %s: selected=%s graphql_or_selected=%s web_reimbursement=%s web_tariff=%s",
+                spot_id,
+                tariff_source,
+                hcc_tariff,
+                web_reimbursement_tariff,
+                web_tariff,
+            )
 
             if selected_channel_id:
                 logging_data = await self._async_get_logging(
@@ -223,10 +252,10 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
                 )
                 _LOGGER.debug(
                     "Logging data for spot %s channel %s: %s",
-                    spot_id,
-                    selected_channel_id,
-                    logging_data,
-                )
+                        spot_id,
+                        selected_channel_id,
+                        logging_data,
+                    )
 
             return EvcSpotData(
                 info=spot,
@@ -241,6 +270,9 @@ class EvcNetCoordinator(DataUpdateCoordinator[dict[str, EvcSpotData]]):
                 hcc_tariff=hcc_tariff,
                 vat_rate=vat_rate,
                 active_transaction=active_transaction,
+                web_tariff=web_tariff,
+                web_reimbursement_tariff=web_reimbursement_tariff,
+                tariff_source=tariff_source,
             )
 
         except EvcNetException as err:
