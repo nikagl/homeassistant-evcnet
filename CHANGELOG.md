@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2-beta.5] - 2026-05-13
+
+### Changed
+- Verification release to confirm automated release notes are always included in prereleases.
+
 ## [1.2.2-beta.4] - 2026-05-13
 
 ### Added
